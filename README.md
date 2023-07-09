@@ -1,4 +1,6 @@
-Quicker is a pythonic tool for querying databases.
+![](https://i.nxhs.cloud/FIc.png)
+
+**Quicker** is a pythonic tool for querying databases.
 
 Quicker wraps popular Python packages:
 
@@ -7,6 +9,12 @@ Quicker wraps popular Python packages:
 - Python builtin `sqlite` for SQLite (not implemented yet).
 
 Connection parameters will passed to "backend" module as is.
+
+# Installation
+
+```
+pip install git+https://git.nxhs.cloud/ge/quicker
+```
 
 # Usage
 
