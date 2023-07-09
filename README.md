@@ -23,20 +23,20 @@ pip install git+https://git.nxhs.cloud/ge/quicker
 ```python
 with Connection(**config) as db:
     db.exec("sql query here...")
-    db.query(sql query here...")  # query is alias for exec()
+    db.query("sql query here...")  # query is alias for exec()
 
 # Query is callable and you can also do this:
 with Connection(**config) as query:
     query("sql query here...")
 ```
 
-`Query` cannot be called itself, you must use `Connection` to correctly initialise `Query` object.
-
-Methods and properties:
+`Query` cannot be called itself, you must use `Connection` to correctly initialise `Query` object. Available methods and properties:
 
 - `query()`, `exec()`. Execute SQL. There is You can use here this syntax: `query('SELECT * FROM users WHERE id = %s', (15,))`.
 - `commit()`. Write changes into database.
 - `cursor`. Call [MySQLdb Cursor object](https://mysqlclient.readthedocs.io/user_guide.html#cursor-objects) methods directly.
+
+Full example:
 
 ```python
 import json
@@ -75,6 +75,8 @@ print(json.dumps(users, indent=4))
     }
 ]
 ```
+
+Changing database:
 
 ```python
 from quicker import Connection
