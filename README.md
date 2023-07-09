@@ -3,12 +3,12 @@ Quicker is a pythonic tool for querying databases.
 Quicker wraps popular Python packages:
 
 - `mysqlclient` for MySQL.
-- `psycopg2` for PostgreSQL.
-- Python builtin `sqlite` for SQLite.
+- `psycopg2` for PostgreSQL (not implemented yet).
+- Python builtin `sqlite` for SQLite (not implemented yet).
 
 Connection parameters will passed to "backend" module as is.
 
-# `Connection` class
+# Usage
 
 `Connection` is context manages and must be used with `with` keyword. `Connection` returns `Query` callable object. `Query` can be called in this ways:
 
@@ -22,8 +22,6 @@ with Connection(**config) as query:
     query("sql query here...")
 ```
 
-# `Query`
-
 `Query` cannot be called itself, you must use `Connection` to correctly initialise `Query` object.
 
 Methods and properties:
@@ -31,10 +29,6 @@ Methods and properties:
 - `query()`, `exec()`. Execute SQL. There is You can use here this syntax: `query('SELECT * FROM users WHERE id = %s', (15,))`.
 - `commit()`. Write changes into database.
 - `cursor`. Call [MySQLdb Cursor object](https://mysqlclient.readthedocs.io/user_guide.html#cursor-objects) methods directly.
-
-# Examples
-
-## SELECT
 
 ```python
 import json
@@ -74,9 +68,7 @@ print(json.dumps(users, indent=4))
 ]
 ```
 
-## Change database
-
-```
+```python
 from quicker import Connection
 
 with Connection(provider='mysql', read_default_file='~/.my.cnf') as db:
