@@ -7,8 +7,8 @@ license = "Unlicense"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-mysqlclient = "^2.2.0"
+python = "^3.8"
+mysqlclient = "^1.4.6"
 
 [build-system]
 requires = ["poetry-core"]
