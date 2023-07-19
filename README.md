@@ -8,11 +8,11 @@
 
 **Quicker** is a pythonic tool for querying databases.
 
-Quicker wraps popular Python packages:
+Quicker wraps Python bindings on DBMS libraries:
 
 - `mysqlclient` for MySQL.
-- `psycopg2` for PostgreSQL (not implemented yet).
-- Python builtin `sqlite` for SQLite (not implemented yet).
+- `psycopg2` for PostgreSQL.
+- `sqlite` from Python standard library for SQLite (not implemented yet).
 
 Connection parameters will passed to "backend" module as is.
 
@@ -28,7 +28,7 @@ pip install git+https://git.nxhs.cloud/ge/quicker
 
 ```python
 with Connection(**config) as db:
-    db.exec("sql query here...")
+    db.execute("sql query here...")
     db.query("sql query here...")  # query is alias for exec()
 
 # Query is callable and you can also do this:
@@ -38,9 +38,10 @@ with Connection(**config) as query:
 
 `Query` cannot be called itself, you must use `Connection` to correctly initialise `Query` object. Available methods and properties:
 
-- `query()`, `exec()`. Execute SQL. There is You can use here this syntax: `query('SELECT * FROM users WHERE id = %s', (15,))`.
+- `query()`, `execute()`. Execute SQL. There is You can use here this syntax: `query('SELECT * FROM users WHERE id = %s', (15,))`.
 - `commit()`. Write changes into database.
-- `cursor`. Call [MySQLdb Cursor object](https://mysqlclient.readthedocs.io/user_guide.html#cursor-objects) methods directly.
+- `cursor`. Access cursor object directly.
+- `connection`. Access connection object directly.
 
 Full example:
 
@@ -88,7 +89,30 @@ Changing database:
 from quicker import Connection
 
 with Connection(provider='mysql', read_default_file='~/.my.cnf') as db:
-    db.query("INSERT INTO users VALUE (3, 'user2', 'user2@example.org')")
+    db.query("INSERT INTO `users` VALUE (3, 'user2', 'user2@example.org')")
 ```
 
 Quicker by default make commit after closing context. Set option `commit=False` to disable automatic commit.
+
+For logging add following code:
+
+```
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+```
+
+Direct access to Cursor object:
+
+```
+from quicker import Connection, make_list
+
+# config declaration here...
+
+with Connection(**config) as db:
+    db.cursor.execute('SELECT `id`, `name`, `email` FROM `users` WHERE `name` = %s', ('John',))
+    users = db.cursor.fetchall()
+    # Note: user is tuple! Convert it to list of dicts!
+    colnames = [desc[0] for desc in db.cursor.description]
+    users_list = make_list(colnames, users)
+```
