@@ -2,17 +2,17 @@
 
 **Quicker** is a pythonic 🐍 tool for querying databases.
 
-Quicker wraps popular Python libraries:
+Quicker wraps Python libraries:
 
 - `mysqlclient` for MySQL.
 - `psycopg2` for PostgreSQL.
-- `sqlite` from Python standard library for SQLite (not implemented yet).
+- `sqlite3` from Python standard library for SQLite.
 
 # Why is it needed?
 
-Briefly — just make queries without bothering to learn the abstractions of the library.
+At work, I periodically have to make queries to different databases and then somehow process the information received. This may be necessary for one-time use, so I don't want to write a lot of code. You may also want to do all the work right in the interactive Python shell.
 
-At work, I periodically have to make queries to different databases and then somehow process the information. I am not an analyst and Quicker is not intended for analysts. The main use of the library is to quickly execute raw SQL queries into the database. You may want to do this entirely in the Python interactive shell. Quicker interface is as simple as possible, thanks to which lazy system administrators can now effortlessly extract data from the database.
+Quicker interface is as simple as possible, thanks to which lazy system administrators can now effortlessly extract data from the database.
 
 Of course, this library **should not be used in production**. This is just a small assistant in routine tasks.
 
@@ -135,7 +135,7 @@ logging.basicConfig(level=logging.DEBUG)
 ## Direct access to Cursor object
 
 ```python
-from quicker import Connection, make_list
+from quicker import Connection, mklist
 
 # config declaration here...
 
@@ -144,5 +144,5 @@ with Connection(**config) as db:
     users = db.cursor.fetchall()
     # Note: "users" is tuple! Convert it to list of dicts!
     colnames = [desc[0] for desc in db.cursor.description]
-    users_list = make_list(colnames, users)
+    users_list = mklist(colnames, users)
 ```

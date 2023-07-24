@@ -1,3 +1,13 @@
+#
+#    .88888.            oo          dP
+#   d8'   `8b                       88
+#   88     88  dP    dP dP .d8888b. 88  .dP  .d8888b. 88d888b.
+#   88  db 88  88    88 88 88'  `"" 88888"   88ooood8 88'  `88
+#   Y8.  Y88P  88.  .88 88 88.  ... 88  `8b. 88.  ... 88
+#    `8888PY8b `88888P' dP `88888P' dP   `YP `88888P' dP
+#
+#   Quicker -- pythonic tool for querying databases.
+
 import logging
 import importlib.util
 from enum import Enum
@@ -21,10 +31,12 @@ def _import(module_name: str, symbol: Optional[str] = None):
     return module
 
 
-def make_list(
-    column_names: List[str], rows: Union[tuple, Tuple[dict, ...]]
-) -> List[dict]:
-    """Convert output to list of dicts from tuples."""
+def mklist(column_names: List[str], rows: Union[tuple, Tuple[dict, ...]]) -> List[dict]:
+    """
+    Convert output to list of dicts from tuples. `rows` can be
+    default tuple or tuple of dicts if MySQL provider is used with
+    MySQLdb.cursors.DictCursor cursor class.
+    """
     data = []
     for row in rows:
         if isinstance(row, dict):
@@ -38,7 +50,6 @@ def make_list(
 
 
 class Provider(str, Enum):
-
     MYSQL = 'mysql'
     POSTGRES = 'postgres'
     SQLITE = 'sqlite'
@@ -55,26 +66,17 @@ class Connection:
     >>>
     """
 
-    def __init__(self,
-        provider: Provider = None,
-        commit: bool = True,
-        **kwargs
-    ):
-        if not provider:
-            raise ValueError('Database provider is not set')
+    def __init__(self, provider: Provider, commit: bool = True, **kwargs):
         self._provider = Provider(provider)
         self._commit = commit
         self._connection_args = kwargs
-
-    def __enter__(self):
         logger.debug(f'Database provider={self._provider}')
-        # -- MySQL / MariaDB --
+
         if self._provider == Provider.MYSQL:
             MySQLdb = _import('MySQLdb')
             DictCursor = _import('MySQLdb.cursors', 'DictCursor')
             try:
-                if self._connection_args['cursorclass']:
-                    cursorclass = DictCursor
+                cursorclass = self._connection_args.pop('cursorclass')
             except KeyError:
                 cursorclass = DictCursor
             self._connection = MySQLdb.connect(
@@ -83,23 +85,35 @@ class Connection:
             )
             logger.debug('Session started')
             self._cursor = self._connection.cursor()
-            return Query(self)
-        # -- PostgreSQL --
+            self._queryobj = Query(self)
+
         if self._provider == Provider.POSTGRES:
             psycopg2 = _import('psycopg2')
             dbname = self._connection_args.pop('database')
             self._connection_args['dbname'] = dbname
             self._connection = psycopg2.connect(**self._connection_args)
             self._cursor = self._connection.cursor()
-            return Query(self)
+            self._queryobj = Query(self)
+
+        if self._provider == Provider.SQLITE:
+            sqlite3 = _import('sqlite3')  # Python may built without SQLite
+            self._connection = sqlite3.connect(**self._connection_args)
+            self._cursor = self._connection.cursor()
+            self._queryobj = Query(self)
+
+    def __enter__(self):
+        return self._queryobj
 
     def __exit__(self, exception_type, exception_value, exception_traceback):
+        self.close()
+
+    def close(self):
         if self._commit:
+            logger.debug('Commiting changes into database')
             self._connection.commit()
-            logger.debug('Changes commited into database')
+        logger.debug('Closing cursor and connection')
         self._cursor.close()
         self._connection.close()
-        logger.debug('Connection closed')
 
 
 class Query:
@@ -128,13 +142,17 @@ class Query:
                 self._fetchall = self._cursor.fetchall()
             except pgProgrammingError as e:
                 self._fetchall = None
+        if self._provider == Provider.SQLITE:
+            self._cursor.execute(*args, **kwargs)
+            logger.debug(f'sqlite3 ran: {args}')
+            self._fetchall = self._cursor.fetchall()
         if self._fetchall is not None:
             self._colnames = []
             if self._cursor.description is not None:
                 self._colnames = [
                     desc[0] for desc in self._cursor.description
                 ]
-            return make_list(self._colnames, self._fetchall)
+            return mklist(self._colnames, self._fetchall)
         return None
 
     def commit(self) -> None:
